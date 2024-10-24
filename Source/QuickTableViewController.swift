@@ -49,7 +49,8 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
     /// - Parameter style: A constant that specifies the style of table view that the controller object is to manage.
     public init(style: UITableView.Style) {
         super.init(nibName: nil, bundle: nil)
-        tableView = UITableView(frame: .zero, style: style)
+
+//        tableView = UITableView(frame: .zero, style: style)
     }
     
     /// Returns a newly initialized view controller with the nib file in the specified bundle.
@@ -111,7 +112,7 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
         tv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         tv.rowHeight = UITableView.automaticDimension
         tv.estimatedRowHeight = 44
-        tv.backgroundColor = .systemBackground
+//        tv.backgroundColor = .systemBackground
 
 //        // remove extra separator lines below the table
 //        tableView.tableFooterView = UIView(frame: CGRect(x: 0,
