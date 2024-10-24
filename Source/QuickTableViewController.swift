@@ -99,26 +99,26 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
         }
     }
 
-    lazy var tableView: UITableView = {
+    open lazy var tableView: UITableView = {
 
-        let tableView = UITableView()
+        let tv = UITableView()
 
-        tableView.dataSource = self // UITableViewDataSource
-        tableView.delegate = self   // UITableViewDelegate
+        tv.dataSource = self // UITableViewDataSource
+        tv.delegate = self   // UITableViewDelegate
 
-        tableView.register(QuickTableSectionView.self)
+        tv.register(QuickTableSectionView.self)
 
-        tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 44
-        tableView.backgroundColor = .systemBackground
+        tv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        tv.rowHeight = UITableView.automaticDimension
+        tv.estimatedRowHeight = 44
+        tv.backgroundColor = .systemBackground
 
 //        // remove extra separator lines below the table
 //        tableView.tableFooterView = UIView(frame: CGRect(x: 0,
 //                                                         y: 0,
 //                                                         width: self.view.bounds.size.width,
 //                                                         height: 1))
-        return tableView
+        return tv
     }()
 }
 
