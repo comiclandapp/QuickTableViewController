@@ -107,12 +107,12 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
         tv.dataSource = self // UITableViewDataSource
         tv.delegate = self   // UITableViewDelegate
 
-//        tv.register(QuickTableSectionView.self)
+        tv.register(QuickTableSectionView.self)
 
         tv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         tv.rowHeight = UITableView.automaticDimension
         tv.estimatedRowHeight = 44
-//        tv.backgroundColor = .systemBackground
+        tv.backgroundColor = .systemBackground
 
 //        // remove extra separator lines below the table
 //        tableView.tableFooterView = UIView(frame: CGRect(x: 0,
