@@ -33,7 +33,7 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
     open var clearsSelectionOnViewWillAppear = true
     
     /// Returns the table view managed by the controller object.
-//    open var tableView: UITableView = UITableView(frame: .zero, style: .grouped)
+    open var tableView: UITableView = UITableView(frame: .zero, style: .grouped)
     
     /// The layout of sections and rows to display in the table view.
     open var tableContents: [Section] = [] {
@@ -50,7 +50,7 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
     public init(style: UITableView.Style) {
         super.init(nibName: nil, bundle: nil)
 
-//        tableView = UITableView(frame: .zero, style: style)
+        tableView = UITableView(frame: .zero, style: style)
     }
     
     /// Returns a newly initialized view controller with the nib file in the specified bundle.
@@ -82,11 +82,14 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
         view.addSubview(tableView)
 
         tableView.frame = view.bounds
-//        tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-//        tableView.rowHeight = UITableView.automaticDimension
-//        tableView.estimatedRowHeight = 44
-//        tableView.dataSource = self
-//        tableView.delegate = self
+        tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 44
+
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(QuickTableSectionView.self)
+
 #if os(tvOS)
         tableView.remembersLastFocusedIndexPath = true
 #endif
@@ -100,7 +103,7 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
         }
     }
 
-    open lazy var tableView: UITableView = {
+    open lazy var tableView_: UITableView = {
 
         let tv = UITableView(frame: .zero, style: .grouped)
 
