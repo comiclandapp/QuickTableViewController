@@ -38,7 +38,6 @@ internal extension Reusable {
     let type = String(describing: self)
     return type.matches(of: String.typeDescriptionPattern).last ?? type
   }
-
 }
 
 // MARK: -
@@ -72,5 +71,80 @@ internal extension String {
       }
     }
   }
+}
 
+protocol ReusableView: AnyObject {
+    static var defaultReuseIdentifier: String { get }
+}
+
+extension ReusableView where Self: UIView {
+    static var defaultReuseIdentifier: String {
+        return String(describing: self)
+    }
+}
+
+extension UITableViewCell: ReusableView {
+}
+
+extension UITableViewHeaderFooterView: ReusableView {
+}
+
+extension UITableView {
+
+    func register<T: UITableViewCell>(_: T.Type) {
+
+        register(T.self, forCellReuseIdentifier: T.defaultReuseIdentifier)
+    }
+
+    func dequeueReusableCell<T: UITableViewCell>() -> T {
+
+        guard let cell = dequeueReusableCell(withIdentifier: T.defaultReuseIdentifier) as? T else {
+            fatalError("Could not dequeue cell with identifier: \(T.defaultReuseIdentifier)")
+        }
+
+        return cell
+    }
+
+    func dequeueReusableCell<T: UITableViewCell>(forIndexPath indexPath: IndexPath) -> T {
+
+        guard let cell = dequeueReusableCell(withIdentifier: T.defaultReuseIdentifier, for: indexPath) as? T else {
+            fatalError("Could not dequeue cell with identifier: \(T.defaultReuseIdentifier)")
+        }
+
+        return cell
+    }
+
+    func register<T: UITableViewHeaderFooterView>(_: T.Type) {
+
+        register(T.self, forHeaderFooterViewReuseIdentifier: T.defaultReuseIdentifier)
+    }
+
+    func dequeueReusableHeaderFooterView<T: UITableViewHeaderFooterView>() -> T {
+
+        guard let cell = dequeueReusableHeaderFooterView(withIdentifier: T.defaultReuseIdentifier) as? T else {
+            fatalError("Could not dequeue cell with identifier: \(T.defaultReuseIdentifier)")
+        }
+
+        return cell
+    }
+}
+
+extension UICollectionViewCell: ReusableView {
+}
+
+extension UICollectionView {
+
+    func register<T: UICollectionViewCell>(_: T.Type) {
+
+        register(T.self, forCellWithReuseIdentifier: T.defaultReuseIdentifier)
+    }
+
+    func dequeueReusableCell<T: UICollectionViewCell>(forIndexPath indexPath: IndexPath) -> T {
+
+        guard let cell = dequeueReusableCell(withReuseIdentifier: T.defaultReuseIdentifier, for: indexPath) as? T else {
+            fatalError("Could not dequeue cell with identifier: \(T.defaultReuseIdentifier)")
+        }
+
+        return cell
+    }
 }

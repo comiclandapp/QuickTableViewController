@@ -27,201 +27,249 @@
 import UIKit
 
 /// A table view controller that shows `tableContents` as formatted sections and rows.
-open class QuickTableViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-
-  /// A Boolean value indicating if the controller clears the selection when the collection view appears.
-  open var clearsSelectionOnViewWillAppear = true
-
-  /// Returns the table view managed by the controller object.
-  open var tableView: UITableView = UITableView(frame: .zero, style: .grouped)
-
-  /// The layout of sections and rows to display in the table view.
-  open var tableContents: [Section] = [] {
-    didSet {
-      tableView.reloadData()
+open class QuickTableViewController: UIViewController, UITableViewDelegate {
+    
+    /// A Boolean value indicating if the controller clears the selection when the collection view appears.
+    open var clearsSelectionOnViewWillAppear = true
+    
+    /// Returns the table view managed by the controller object.
+//    open var tableView: UITableView = UITableView(frame: .zero, style: .grouped)
+    
+    /// The layout of sections and rows to display in the table view.
+    open var tableContents: [Section] = [] {
+        didSet {
+            tableView.reloadData()
+        }
     }
-  }
+    
+    // MARK: - Initialization
+    
+    /// Initializes a table view controller to manage a table view of a given style.
+    ///
+    /// - Parameter style: A constant that specifies the style of table view that the controller object is to manage.
+    public init(style: UITableView.Style) {
+        super.init(nibName: nil, bundle: nil)
+        tableView = UITableView(frame: .zero, style: style)
+    }
+    
+    /// Returns a newly initialized view controller with the nib file in the specified bundle.
+    ///
+    /// - Parameters:
+    ///   - nibNameOrNil: The name of the nib file to associate with the view controller.
+    ///   - nibBundleOrNil: The bundle in which to search for the nib file.
+    public override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+    }
+    
+    /// Returns an object initialized from data in a given unarchiver.
+    ///
+    /// - Parameter coder: An unarchiver object.
+    public required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+    
+    deinit {
+        tableView.dataSource = nil
+        tableView.delegate = nil
+    }
+    
+    // MARK: - UIViewController
+    
+    open override func viewDidLoad() {
+        super.viewDidLoad()
 
-  // MARK: - Initialization
+        view.addSubview(tableView)
 
-  /// Initializes a table view controller to manage a table view of a given style.
-  ///
-  /// - Parameter style: A constant that specifies the style of table view that the controller object is to manage.
-  public init(style: UITableView.Style) {
-    super.init(nibName: nil, bundle: nil)
-    tableView = UITableView(frame: .zero, style: style)
-  }
+        tableView.frame = view.bounds
+//        tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+//        tableView.rowHeight = UITableView.automaticDimension
+//        tableView.estimatedRowHeight = 44
+//        tableView.dataSource = self
+//        tableView.delegate = self
+#if os(tvOS)
+        tableView.remembersLastFocusedIndexPath = true
+#endif
+    }
+    
+    open override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
 
-  /// Returns a newly initialized view controller with the nib file in the specified bundle.
-  ///
-  /// - Parameters:
-  ///   - nibNameOrNil: The name of the nib file to associate with the view controller.
-  ///   - nibBundleOrNil: The bundle in which to search for the nib file.
-  public override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-    super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-  }
+        if let indexPath = tableView.indexPathForSelectedRow, clearsSelectionOnViewWillAppear {
+            tableView.deselectRow(at: indexPath, animated: true)
+        }
+    }
 
-  /// Returns an object initialized from data in a given unarchiver.
-  ///
-  /// - Parameter coder: An unarchiver object.
-  public required init?(coder: NSCoder) {
-    super.init(coder: coder)
-  }
+    lazy var tableView: UITableView = {
 
-  deinit {
-    tableView.dataSource = nil
-    tableView.delegate = nil
-  }
+        let tableView = UITableView()
 
-  // MARK: - UIViewController
+        tableView.dataSource = self // UITableViewDataSource
+        tableView.delegate = self   // UITableViewDelegate
 
-  open override func viewDidLoad() {
-    super.viewDidLoad()
-    view.addSubview(tableView)
-    tableView.frame = view.bounds
-    tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-    tableView.rowHeight = UITableView.automaticDimension
-    tableView.estimatedRowHeight = 44
-    tableView.dataSource = self
-    tableView.delegate = self
+        tableView.register(QuickTableSectionView.self)
+
+        tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 44
+        tableView.backgroundColor = .systemBackground
+
+//        // remove extra separator lines below the table
+//        tableView.tableFooterView = UIView(frame: CGRect(x: 0,
+//                                                         y: 0,
+//                                                         width: self.view.bounds.size.width,
+//                                                         height: 1))
+        return tableView
+    }()
+}
+
+// MARK: - UITableViewDataSource
+extension QuickTableViewController: UITableViewDataSource {
+    
+    open func numberOfSections(in tableView: UITableView) -> Int {
+        return tableContents.count
+    }
+    
+    open func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return tableContents[section].rows.count
+    }
+    
+    open func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return tableContents[section].title
+    }
+
+    open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+
+        let row = tableContents[indexPath.section].rows[indexPath.row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: row.cellReuseIdentifier) ??
+
+        row.cellType.init(style: row.cellStyle, reuseIdentifier: row.cellReuseIdentifier)
+        
+        cell.defaultSetUp(with: row)
+        (cell as? Configurable)?.configure(with: row)
+#if os(iOS)
+        (cell as? SwitchCell)?.delegate = self
+        (cell as? TextFieldCell)?.delegate = self
+#endif
+        row.customize?(cell, row)
+        
+        return cell
+    }
+    
+    open func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        return tableContents[section].footer
+    }
+    
+    // MARK: - UITableViewDelegate
+    
+    open func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        return tableContents[indexPath.section].rows[indexPath.row].isSelectable
+    }
+
+    open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+
+        let section = tableContents[indexPath.section]
+        let row = section.rows[indexPath.row]
+
+        switch (section, row) {
+            case let (radio as RadioSection, option as OptionRowCompatible):
+                let changes: [IndexPath] = radio.toggle(option).map {
+                    IndexPath(row: $0, section: indexPath.section)
+                }
+                if changes.isEmpty {
+                    tableView.deselectRow(at: indexPath, animated: false)
+                } else {
+                    tableView.reloadRows(at: changes, with: .automatic)
+                }
+                
+            case let (_, option as OptionRowCompatible):
+                // Allow OptionRow to be used without RadioSection.
+                option.isSelected = !option.isSelected
+                tableView.reloadData()
+                
     #if os(tvOS)
-    tableView.remembersLastFocusedIndexPath = true
+            case let (_, row as SwitchRowCompatible):
+                // SwitchRow on tvOS behaves like OptionRow.
+                row.switchValue = !row.switchValue
+                tableView.reloadData()
     #endif
-  }
-
-  open override func viewWillAppear(_ animated: Bool) {
-    super.viewWillAppear(animated)
-    if let indexPath = tableView.indexPathForSelectedRow, clearsSelectionOnViewWillAppear {
-      tableView.deselectRow(at: indexPath, animated: true)
+                
+            case (_, is TapActionRowCompatible):
+                tableView.deselectRow(at: indexPath, animated: true)
+                // Avoid some unwanted animation when the action also involves table view reload.
+                DispatchQueue.main.async {
+                    row.action?(row)
+                }
+                
+            case let (_, row) where row.isSelectable:
+                DispatchQueue.main.async {
+                    row.action?(row)
+                }
+                
+            default:
+                break
+        }
     }
-  }
-
-  // MARK: - UITableViewDataSource
-
-  open func numberOfSections(in tableView: UITableView) -> Int {
-    return tableContents.count
-  }
-
-  open func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-    return tableContents[section].rows.count
-  }
-
-  open func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-    return tableContents[section].title
-  }
-
-  open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    let row = tableContents[indexPath.section].rows[indexPath.row]
-    let cell =
-      tableView.dequeueReusableCell(withIdentifier: row.cellReuseIdentifier) ??
-      row.cellType.init(style: row.cellStyle, reuseIdentifier: row.cellReuseIdentifier)
-
-    cell.defaultSetUp(with: row)
-    (cell as? Configurable)?.configure(with: row)
-    #if os(iOS)
-      (cell as? SwitchCell)?.delegate = self
-    #endif
-    row.customize?(cell, row)
-
-    return cell
-  }
-
-  open func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-    return tableContents[section].footer
-  }
-
-  // MARK: - UITableViewDelegate
-
-  open func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-    return tableContents[indexPath.section].rows[indexPath.row].isSelectable
-  }
-
-  open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-    let section = tableContents[indexPath.section]
-    let row = section.rows[indexPath.row]
-
-    switch (section, row) {
-    case let (radio as RadioSection, option as OptionRowCompatible):
-      let changes: [IndexPath] = radio.toggle(option).map {
-        IndexPath(row: $0, section: indexPath.section)
-      }
-      if changes.isEmpty {
-        tableView.deselectRow(at: indexPath, animated: false)
-      } else {
-        tableView.reloadRows(at: changes, with: .automatic)
-      }
-
-    case let (_, option as OptionRowCompatible):
-      // Allow OptionRow to be used without RadioSection.
-      option.isSelected = !option.isSelected
-      tableView.reloadData()
-
-    #if os(tvOS)
-    case let (_, row as SwitchRowCompatible):
-      // SwitchRow on tvOS behaves like OptionRow.
-      row.switchValue = !row.switchValue
-      tableView.reloadData()
-    #endif
-
-    case (_, is TapActionRowCompatible):
-      tableView.deselectRow(at: indexPath, animated: true)
-      // Avoid some unwanted animation when the action also involves table view reload.
-      DispatchQueue.main.async {
-        row.action?(row)
-      }
-
-    case let (_, row) where row.isSelectable:
-      DispatchQueue.main.async {
-        row.action?(row)
-      }
-
-    default:
-      break
+    
+#if os(iOS)
+    public func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
+        switch tableContents[indexPath.section].rows[indexPath.row] {
+        case let row as NavigationRowCompatible:
+            DispatchQueue.main.async {
+                row.accessoryButtonAction?(row)
+            }
+        default:
+            break
+        }
     }
-  }
-
-  #if os(iOS)
-  public func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
-    switch tableContents[indexPath.section].rows[indexPath.row] {
-    case let row as NavigationRowCompatible:
-      DispatchQueue.main.async {
-        row.accessoryButtonAction?(row)
-      }
-    default:
-      break
+#endif
+    
+#if os(tvOS)
+    private var currentFocusedIndexPath: IndexPath?
+    
+    open override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        currentFocusedIndexPath = (context.nextFocusedView as? UITableViewCell).flatMap(tableView.indexPath(for:))
     }
-  }
-  #endif
-
-  #if os(tvOS)
-  private var currentFocusedIndexPath: IndexPath?
-
-  open override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
-    currentFocusedIndexPath = (context.nextFocusedView as? UITableViewCell).flatMap(tableView.indexPath(for:))
-  }
-
-  public func indexPathForPreferredFocusedView(in tableView: UITableView) -> IndexPath? {
-    return currentFocusedIndexPath
-  }
-  #endif
-
+    
+    public func indexPathForPreferredFocusedView(in tableView: UITableView) -> IndexPath? {
+        return currentFocusedIndexPath
+    }
+#endif
+    
 }
 
 // MARK: - SwitchCellDelegate
 
 #if os(iOS)
 extension QuickTableViewController: SwitchCellDelegate {
-
-  @objc
-  open func switchCell(_ cell: SwitchCell, didToggleSwitch isOn: Bool) {
-    guard
-      let indexPath = tableView.indexPath(for: cell),
-      let row = tableContents[indexPath.section].rows[indexPath.row] as? SwitchRowCompatible
-    else {
-      return
+    
+    @objc
+    open func switchCell(_ cell: SwitchCell, didToggleSwitch isOn: Bool) {
+        guard
+            let indexPath = tableView.indexPath(for: cell),
+            let row = tableContents[indexPath.section].rows[indexPath.row] as? SwitchRowCompatible
+        else {
+            return
+        }
+        row.switchValue = isOn
     }
-    row.switchValue = isOn
-  }
-
+    
 }
 #endif
+
+// MARK: - TextFieldCellDelegate
+extension QuickTableViewController: TextFieldCellDelegate {
+
+    @objc
+    public func textFieldCell(_ cell: TextFieldCell,
+                              textFieldDidChange textFieldValue: String) {
+        guard
+            let indexPath = tableView.indexPath(for: cell),
+            let row = tableContents[indexPath.section].rows[indexPath.row] as? TextFieldRowCompatible
+        else {
+            return
+        }
+
+        row.textFieldValue = textFieldValue
+    }
+}
+
