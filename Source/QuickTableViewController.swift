@@ -101,12 +101,12 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
 
     open lazy var tableView: UITableView = {
 
-        let tv = UITableView()
+        let tv = UITableView(frame: .zero, style: .grouped)
 
         tv.dataSource = self // UITableViewDataSource
         tv.delegate = self   // UITableViewDelegate
 
-        tv.register(QuickTableSectionView.self)
+//        tv.register(QuickTableSectionView.self)
 
         tv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         tv.rowHeight = UITableView.automaticDimension
