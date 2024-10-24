@@ -24,7 +24,7 @@
 //  SOFTWARE.
 //
 
-import Foundation
+import UIKit
 
 /// This protocol defines the compatible interface of a `NavigationRow` regardless of its associated cell type.
 public protocol NavigationRowCompatible: Row, RowStyle {
@@ -53,4 +53,17 @@ public protocol OptionRowCompatible: Row, RowStyle {
 public protocol SwitchRowCompatible: Row, RowStyle {
   /// The state of the switch.
   var switchValue: Bool { get set }
+}
+
+// This protocol defines the compatible interface of a `TextFieldRow` regardless of its associated cell type.
+public protocol TextFieldRowCompatible: Row, RowStyle {
+
+    /// The value of the text field.
+    var textFieldValue: String { get set }
+
+    /// The value of the placeholder.
+    var placeholder: String { get set }
+
+    /// The keyboard type.
+    var keyboardType: UIKeyboardType { get set }
 }

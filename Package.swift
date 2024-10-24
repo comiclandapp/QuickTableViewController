@@ -28,7 +28,7 @@ import PackageDescription
 let package = Package(
     name: "QuickTableViewController",
     platforms: [
-        .iOS(.v9),
+        .iOS(.v13),
         .tvOS(.v9),
     ],
     products: [
