@@ -26,9 +26,23 @@
 
 import UIKit
 
+extension UIApplication {
+
+    // https://stackoverflow.com/questions/1490573/how-can-i-programmatically-check-whether-a-keyboard-is-present-in-ios-app
+
+    /// Checks if view hierarchy of application contains `UIRemoteKeyboardWindow` if it does, keyboard is presented
+    var isKeyboardPresent: Bool {
+
+        guard let keyboardWindowClass = NSClassFromString("UIRemoteKeyboardWindow") else { return false }
+        return UIApplication.shared.windows.contains(where: { $0.isKind(of: keyboardWindowClass) })
+    }
+}
+
 /// A table view controller that shows `tableContents` as formatted sections and rows.
-open class QuickTableViewController: UIViewController, UITableViewDelegate {
-    
+open class QuickTableViewController: UIViewController, UIGestureRecognizerDelegate {
+
+    fileprivate var tapGesture = UITapGestureRecognizer()
+
     /// A Boolean value indicating if the controller clears the selection when the collection view appears.
     open var clearsSelectionOnViewWillAppear = true
     
@@ -93,8 +107,61 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
 #if os(tvOS)
         tableView.remembersLastFocusedIndexPath = true
 #endif
+        
+        // register for notifications when the keyboard appears
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(keyboardWillShow(_:)),
+                                               name: UIResponder.keyboardWillChangeFrameNotification,
+                                               object: nil)
+        // dismiss the keyboard on tap
+        tapGesture = UITapGestureRecognizer(target: self,
+                                            action: #selector(dismissKeyboard))
+        tapGesture.delegate = self
+        view.addGestureRecognizer(tapGesture)
     }
     
+    // Handle keyboard frame changes here.
+    // Use the CGRect stored in the notification to determine what part of the screen the keyboard will cover.
+    // Adjust our table view's contentInset and scrollIndicatorInsets properties
+    // so that the table view content avoids the part of the screen covered by the keyboard
+    @objc func keyboardWillShow(_ n: NSNotification) {
+
+        // read the CGRect from the notification (if any)
+        if let newFrame = (n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
+
+            let insets = UIEdgeInsets(top: 0,
+                                      left: 0,
+                                      bottom: newFrame.height,
+                                      right: 0)
+            tableView.contentInset = insets
+            tableView.scrollIndicatorInsets = insets
+        }
+    }
+
+    @objc func dismissKeyboard() {
+
+        view.endEditing(true)
+        scrollToTop()
+    }
+
+    // called before touchesBegan:withEvent: is called on the gesture recognizer for a new touch
+    // return false to prevent the gesture recognizer from seeing this touch
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                                  shouldReceive touch: UITouch) -> Bool {
+
+        return UIApplication.shared.isKeyboardPresent
+    }
+
+    fileprivate func scrollToTop() {
+
+        let topRow = IndexPath(row: 0,
+                               section: 0)
+        tableView.scrollToRow(at: topRow,
+                              at: .top,
+                              animated: true)
+    }
+
+
     open override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
@@ -102,33 +169,23 @@ open class QuickTableViewController: UIViewController, UITableViewDelegate {
             tableView.deselectRow(at: indexPath, animated: true)
         }
     }
-
-    open lazy var tableView_: UITableView = {
-
-        let tv = UITableView(frame: .zero, style: .grouped)
-
-        tv.dataSource = self // UITableViewDataSource
-        tv.delegate = self   // UITableViewDelegate
-
-        tv.register(QuickTableSectionView.self)
-
-        tv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        tv.rowHeight = UITableView.automaticDimension
-        tv.estimatedRowHeight = 44
-        tv.backgroundColor = .systemBackground
-
-//        // remove extra separator lines below the table
-//        tableView.tableFooterView = UIView(frame: CGRect(x: 0,
-//                                                         y: 0,
-//                                                         width: self.view.bounds.size.width,
-//                                                         height: 1))
-        return tv
-    }()
 }
 
 // MARK: - UITableViewDataSource
 extension QuickTableViewController: UITableViewDataSource {
     
+    open func tableView(_ tableView: UITableView,
+                        viewForHeaderInSection section: Int) -> UIView? {
+
+        let sectionItem = tableContents[section]
+
+        let view: QuickTableSectionView = tableView.dequeueReusableHeaderFooterView()
+
+        view.sectionItem = sectionItem
+
+        return view
+    }
+
     open func numberOfSections(in tableView: UITableView) -> Int {
         return tableContents.count
     }
@@ -162,8 +219,10 @@ extension QuickTableViewController: UITableViewDataSource {
     open func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
         return tableContents[section].footer
     }
-    
-    // MARK: - UITableViewDelegate
+}
+
+// MARK: - UITableViewDelegate
+extension QuickTableViewController: UITableViewDelegate {
     
     open func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
         return tableContents[indexPath.section].rows[indexPath.row].isSelectable
@@ -216,13 +275,14 @@ extension QuickTableViewController: UITableViewDataSource {
     
 #if os(iOS)
     public func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
+
         switch tableContents[indexPath.section].rows[indexPath.row] {
-        case let row as NavigationRowCompatible:
-            DispatchQueue.main.async {
-                row.accessoryButtonAction?(row)
-            }
-        default:
-            break
+            case let row as NavigationRowCompatible:
+                DispatchQueue.main.async {
+                    row.accessoryButtonAction?(row)
+                }
+            default:
+                break
         }
     }
 #endif
