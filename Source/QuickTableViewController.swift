@@ -102,7 +102,6 @@ open class QuickTableViewController: UIViewController, UIGestureRecognizerDelega
 
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.register(QuickTableSectionView.self)
 
 #if os(tvOS)
         tableView.remembersLastFocusedIndexPath = true
@@ -161,7 +160,6 @@ open class QuickTableViewController: UIViewController, UIGestureRecognizerDelega
                               animated: true)
     }
 
-
     open override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
@@ -173,18 +171,6 @@ open class QuickTableViewController: UIViewController, UIGestureRecognizerDelega
 
 // MARK: - UITableViewDataSource
 extension QuickTableViewController: UITableViewDataSource {
-    
-    open func tableView(_ tableView: UITableView,
-                        viewForHeaderInSection section: Int) -> UIView? {
-
-        let sectionItem = tableContents[section]
-
-        let view: QuickTableSectionView = tableView.dequeueReusableHeaderFooterView()
-
-        view.sectionItem = sectionItem
-
-        return view
-    }
 
     open func numberOfSections(in tableView: UITableView) -> Int {
         return tableContents.count
