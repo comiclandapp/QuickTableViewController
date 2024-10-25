@@ -197,6 +197,9 @@ extension QuickTableViewController: UITableViewDataSource {
         (cell as? SwitchCell)?.delegate = self
         (cell as? TextFieldCell)?.delegate = self
 #endif
+        cell.textLabel?.textColor = .label
+        cell.detailTextLabel?.textColor = .systemGray
+
         row.customize?(cell, row)
         
         return cell
